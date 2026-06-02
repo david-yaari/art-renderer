@@ -8,33 +8,37 @@ export const RemotionRoot = () => {
       id="ArtAnimation"
       component={ArtVideo as any} 
       fps={VIDEO_SETTINGS.fps}
-      // 🌟 Base defaults updated to match your new dictionary
+      // 🌟 Base vertical defaults preserved
       width={PLATFORMS.vertical.width}
       height={PLATFORMS.vertical.height}
       durationInFrames={900} 
       calculateMetadata={({ props }) => {
+        
+        // 🌟 FIX 1: Cast to 'any' to completely bypass strict TypeScript compilation blocks
+        const rawProps = props as any;
 
-        // 🌟 FIX: Automatically unwrap the data if n8n passes an array or an n8n JSON wrapper
-        let baseProps = Array.isArray(props) ? props[0] : props;
+        // 🌟 FIX 2: Safely unwrap n8n's outer array structure at runtime
+        let baseProps = Array.isArray(rawProps) ? rawProps[0] : rawProps;
         if (baseProps && baseProps.json) {
           baseProps = baseProps.json;
         }
-        // 1. Safety fallback array check 
-        const incomingImages = Array.isArray(props.images) ? props.images : [];
+
+        // Extract the images sequence safely
+        const incomingImages = baseProps && Array.isArray(baseProps.images) ? baseProps.images : [];
         const imageCount = incomingImages.length > 0 ? incomingImages.length : 1;
         
-        // 2. Get durations
-        const duration = props.durationPerImage || VIDEO_SETTINGS.durationPerImage;
-        const fade = props.fadeFrames !== undefined ? props.fadeFrames : VIDEO_SETTINGS.fadeFrames;
-        const intro = props.introDuration || VIDEO_SETTINGS.introDuration;
-        const outro = props.outroDuration || VIDEO_SETTINGS.outroDuration;
+        // Your Exact Timeline configurations with robust fallbacks
+        const duration = baseProps?.durationPerImage || VIDEO_SETTINGS.durationPerImage;
+        const fade = baseProps?.fadeFrames !== undefined ? baseProps.fadeFrames : VIDEO_SETTINGS.fadeFrames;
+        const intro = baseProps?.introDuration || VIDEO_SETTINGS.introDuration;
+        const outro = baseProps?.outroDuration || VIDEO_SETTINGS.outroDuration;
         
-        // 3. Perfect Timeline Math
+        // Your Exact Timeline Math
         const totalOverlaps = imageCount + 1; 
         const totalDuration = Math.ceil(intro + (imageCount * duration) + outro - (totalOverlaps * fade));
         
-        // 🌟 4. Dynamic Lookup (Defaults to 'vertical' now!)
-        const targetPlatform = props.platform || 'vertical';
+        // Your Exact Dynamic Platform Lookup
+        const targetPlatform = baseProps?.platform || 'vertical';
         const { width, height } = PLATFORMS[targetPlatform as keyof typeof PLATFORMS] || PLATFORMS.vertical;
 
         return {
@@ -43,14 +47,14 @@ export const RemotionRoot = () => {
           height: height,   
           props: {
             ...VIDEO_SETTINGS,
-            ...props,
+            ...baseProps, // Pipes clean, flat properties directly down to ArtVideo components
             images: incomingImages
           },
         };
       }}
       defaultProps={{
         images: [] as string[],
-        platform: 'vertical', // 🌟 Default prop updated
+        platform: 'vertical',
         ...VIDEO_SETTINGS 
       }}
     />

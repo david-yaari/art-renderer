@@ -5,9 +5,8 @@ import { ArtVideoProps, THEME } from './config';
 // 🎬 RESPONSIVE BRANDED INTRO SCREEN
 const ArtIntro: React.FC<{ duration: number; fadeFrames: number; title: string; subtitle: string }> = ({ duration, fadeFrames, title, subtitle }) => {
   const frame = useCurrentFrame();
-  const { width } = useVideoConfig(); // 🌟 Added fluid width discovery
+  const { width } = useVideoConfig(); 
 
-  // Calculate font sizes as percentages so they never break on vertical screens
   const dynamicTitleSize = width * 0.055;
   const dynamicSubtitleSize = width * 0.022;
   const dynamicMargin = width * 0.015;
@@ -49,11 +48,12 @@ const ArtOutro: React.FC<{ duration: number; fadeFrames: number; title: string; 
   );
 };
 
-// 🎬 CINEMATIC IMAGE WITH AMBIENT BLUR
+// 🎬 CINEMATIC IMAGE WITH LOCKSTEP CAMERA TRACKING
 const CinematicImage: React.FC<{ src: string; index: number } & ArtVideoProps> = (props) => {
   const frame = useCurrentFrame(); 
   const { width } = useVideoConfig(); 
 
+  // Smooth fade-in and fade-out envelope
   const opacity = interpolate(
     frame,
     [0, props.fadeFrames, props.durationPerImage - props.fadeFrames, props.durationPerImage], 
@@ -61,46 +61,57 @@ const CinematicImage: React.FC<{ src: string; index: number } & ArtVideoProps> =
     { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
   );
 
+  // Unified camera calculations
   const scale = interpolate(frame, [0, props.durationPerImage], [1, props.zoomEnd]);
 
   const directionX = props.index % 2 === 0 ? 1 : -1;
   const directionY = props.index % 3 === 0 ? 1 : -1;
   
-  // Scale panning speed so it looks consistent across all formats
   const responsivePanX = props.panMaxX * (width / 1920);
   const responsivePanY = props.panMaxY * (width / 1920);
 
   const translateX = interpolate(frame, [0, props.durationPerImage], [0, responsivePanX * directionX]);
   const translateY = interpolate(frame, [0, props.durationPerImage], [0, responsivePanY * directionY]);
 
+  // 🌟 Master transform matrix applied identically to both layers
+  const sharedCameraTransform = `scale(${scale}) translateX(${translateX}px) translateY(${translateY}px)`;
+
   return (
-    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
+    <AbsoluteFill style={{ overflow: 'hidden', backgroundColor: '#000' }}>
       
-      {/* 🌫️ 1. AMBIENT BLUR BACKDROP (Automatically fills background layout) */}
-      <AbsoluteFill style={{ opacity: opacity * 0.35 }}>
-        <Img 
-          src={props.src} 
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover', // Stretches to fill boundaries
-            filter: 'blur(50px)', // <--- THE MAGIC BLUR IS HERE
-            transform: `scale(${scale * 1.1}) translateX(${translateX}px) translateY(${translateY}px)`,
-          }} 
-        />
-      </AbsoluteFill>
+      {/* 🌫️ 1. AMBIENT BLUR BACKDROP */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: -40, // 🌟 Bleeds past edges to prevent white frame lines during heavy pans
+          backgroundImage: `url(${props.src})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(40px) brightness(0.5)',
+          opacity: opacity * 0.4,
+          transform: `scale(1.1) ${sharedCameraTransform}`, // Extra native scale buffer for the blur bleed
+        }}
+      />
 
       {/* 🖼️ 2. PRISTINE FOREGROUND ARTWORK */}
-      <AbsoluteFill style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '6%' }}>
+      <AbsoluteFill
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '8%',
+          opacity: opacity,
+          transform: sharedCameraTransform, // 🌟 Locked onto the identical camera track
+        }}
+      >
         <Img 
           src={props.src} 
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain', // Protects fine art from cropping
-            opacity: opacity,
-            transform: `scale(${scale}) translateX(${translateX}px) translateY(${translateY}px)`,
-            boxShadow: '0px 25px 60px rgba(0, 0, 0, 0.7)' // Adds depth
+            maxWidth: '100%',
+            maxHeight: '100%',
+            objectFit: 'contain', 
+            boxShadow: '0px 30px 70px rgba(0, 0, 0, 0.65)',
+            borderRadius: '4px'
           }} 
         />
       </AbsoluteFill>
