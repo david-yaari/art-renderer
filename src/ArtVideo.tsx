@@ -48,10 +48,17 @@ const ArtOutro: React.FC<{ duration: number; fadeFrames: number; title: string; 
   );
 };
 
-// 🎬 CINEMATIC IMAGE WITH LOCKSTEP CAMERA TRACKING
+// 🎬 CINEMATIC IMAGE GENERATOR WITH DYNAMIC MOTION
 const CinematicImage: React.FC<{ src: string; index: number } & ArtVideoProps> = (props) => {
   const frame = useCurrentFrame(); 
   const { width } = useVideoConfig(); 
+
+  // 🌟 DYNAMIC MOTION CALCULATOR
+  const isOverview = props.index === 0;
+  
+  const activeZoomEnd = isOverview ? 1.03 : (props.zoomEnd || 1.15);
+  const activePanMaxX = isOverview ? props.panMaxX * 0.3 : props.panMaxX;
+  const activePanMaxY = isOverview ? props.panMaxY * 0.3 : props.panMaxY;
 
   // Smooth fade-in and fade-out envelope
   const opacity = interpolate(
@@ -61,57 +68,55 @@ const CinematicImage: React.FC<{ src: string; index: number } & ArtVideoProps> =
     { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
   );
 
-  // Unified camera calculations
-  const scale = interpolate(frame, [0, props.durationPerImage], [1, props.zoomEnd]);
+  // Unified responsive camera calculations mapped to our type-dependent boundaries
+  const scale = interpolate(frame, [0, props.durationPerImage], [1, activeZoomEnd]);
 
   const directionX = props.index % 2 === 0 ? 1 : -1;
   const directionY = props.index % 3 === 0 ? 1 : -1;
   
-  const responsivePanX = props.panMaxX * (width / 1920);
-  const responsivePanY = props.panMaxY * (width / 1920);
+  const responsivePanX = activePanMaxX * (width / 1920);
+  const responsivePanY = activePanMaxY * (width / 1920);
 
   const translateX = interpolate(frame, [0, props.durationPerImage], [0, responsivePanX * directionX]);
   const translateY = interpolate(frame, [0, props.durationPerImage], [0, responsivePanY * directionY]);
 
-  // 🌟 Master transform matrix applied identically to both layers
+  // Unified camera matrix
   const sharedCameraTransform = `scale(${scale}) translateX(${translateX}px) translateY(${translateY}px)`;
 
   return (
     <AbsoluteFill style={{ overflow: 'hidden', backgroundColor: '#000' }}>
       
-      {/* 🌫️ 1. AMBIENT BLUR BACKDROP */}
+      {/* 🌫️ 1. DEFENSIVE BACKDROP LAYER (Fills the background edges beautifully if contain leaves gaps) */}
       <div
         style={{
           position: 'absolute',
-          inset: -40, // 🌟 Bleeds past edges to prevent white frame lines during heavy pans
+          inset: -40, 
           backgroundImage: `url(${props.src})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           filter: 'blur(40px) brightness(0.5)',
-          opacity: opacity * 0.4,
-          transform: `scale(1.1) ${sharedCameraTransform}`, // Extra native scale buffer for the blur bleed
+          opacity: opacity * 0.6, // Slightly elevated visibility for non-cropped frame boundaries
+          transform: `scale(1.1) ${sharedCameraTransform}`, 
         }}
       />
 
-      {/* 🖼️ 2. PRISTINE FOREGROUND ARTWORK */}
+      {/* 🖼️ 2. DYNAMIC COMPOSITION LAYER */}
       <AbsoluteFill
         style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '8%',
+          padding: '0%', 
           opacity: opacity,
-          transform: sharedCameraTransform, // 🌟 Locked onto the identical camera track
+          transform: sharedCameraTransform, 
         }}
       >
         <Img 
           src={props.src} 
           style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
-            objectFit: 'contain', 
-            boxShadow: '0px 30px 70px rgba(0, 0, 0, 0.65)',
-            borderRadius: '4px'
+            width: '100%',      
+            height: '100%',     
+            objectFit: isOverview ? 'contain' : 'cover',  // 🌟 Changed to contain for index 0 to guarantee non-cropped full artwork overview
           }} 
         />
       </AbsoluteFill>

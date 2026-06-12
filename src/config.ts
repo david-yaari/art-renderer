@@ -40,13 +40,16 @@ export const THEME = {
   }
 };
 
-// 📐 THE ASPECT RATIO DIMENSIONS DICTIONARY
+// 📐 THE MASTER RESOLUTION DICTIONARY
 export const PLATFORMS = {
-  landscape: { width: 3840, height: 2160 },      // 16:9 (Replaces youtube/twitter)
-  vertical: { width: 2160, height: 3840 },       // 9:16 (Replaces tiktok/reels)
-  square: { width: 1080, height: 1080 },         // 1:1 (Replaces instagram/linkedin)
-  pinterest_tall: { width: 1000, height: 1500 }  // 2:3 
+  Archive_Original: { width: 3840, height: 2160 },    // Dynamically scales to original Lightroom crop
+  CinemaScope_239x1: { width: 3840, height: 1606 },   // Cinematic horizontal scope
+  Vertical_Reels_9x16: { width: 2160, height: 3840 },  // 9:16 vertical smartphone 4K
+  Portrait_Feed_4x5: { width: 1728, height: 2160 },    // 4:5 Instagram feed space dominator
+  Square_Grid_1x1: { width: 1080, height: 1080 },      // 1:1 traditional square grid
+  Widescreen_16x9: { width: 3840, height: 2160 }       // 16:9 standard horizontal UHD
 };
+
 
 // 🛡️ TYPESCRIPT RULES
 export interface ArtVideoProps {
